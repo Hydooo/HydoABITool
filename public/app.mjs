@@ -101,6 +101,7 @@ let history = storage.get("history", []);
 if (!Array.isArray(history)) history = [];
 let result = null;
 let capture;
+let paused = false;
 let merchantSession;
 let merchantView;
 let hovered;
@@ -206,7 +207,7 @@ function boardState() {
       ({ id, col, row, w, h, record: compactRecord(revealed.get(key + "/" + id)) })) };
 }
 
-function gridMarkup(board = boardState(), activeRaid = raid(), selected = result?.slotId) {
+function gridMarkup(board = boardState(), activeRaid = raid(), selected = result?.slotId, image) {
   if (!board) return emptyCard("gridEmptyTitle", "gridEmptyBody");
   const tiles = board.slots.map(slot => {
     const group = slot.record && groups.get(slot.record.id);
@@ -217,29 +218,42 @@ function gridMarkup(board = boardState(), activeRaid = raid(), selected = result
     const number = (slot.row + 1) + "·" + (slot.col + 1);
     const state = item ? " revealed" : "";
     const current = slot.record && slot.id === selected;
-    const badge = item && estimate.redChance > 0 ? '<span class="slot-rare">' + escapeHtml(t("red")) + "</span>" : "";
-    const image = item ? lootImage(item, "slot-art") : icon("box");
+    const candidateCount = estimate?.items.length ?? 0;
+    const badge = candidateCount > 1 ? '<span class="slot-count" title="Possible items">+' + (candidateCount - 1) + "</span>" : "";
+    const artwork = item ? lootImage(item, "slot-art") : "";
+    const name = item ? '<span class="slot-name">' + escapeHtml(title) + "</span>" :
+      !image ? '<span class="slot-placeholder">' + escapeHtml(t("unknownCargo")) + "</span>" : "";
     return '<button type="button" class="cargo-slot' + state + (active ? " hovering" : "") +
       (current ? " current" : "") + '" data-slot="' + escapeHtml(slot.id) + '" aria-label="' + escapeHtml(title + " " + number) +
+      '" data-rarity="' + (item?.rarity ?? "") + '" title="' + escapeHtml(title + " · row " + (slot.row + 1) + ", column " + (slot.col + 1) +
+        (candidateCount > 1 ? " · " + candidateCount + " possible items" : "")) +
       '" style="grid-column:' + (slot.col + 1) + ' / span ' + slot.w + ';grid-row:' + (slot.row + 1) +
-      ' / span ' + slot.h + '"><span class="slot-coord">' + number + '</span>' + image +
-      (item ? '<span class="slot-name">' + escapeHtml(title) + "</span>" : "") + badge + '</button>';
+      ' / span ' + slot.h + '"><span class="slot-coord">' + number + '</span>' + artwork + name + badge + '</button>';
   }).join("");
-  return '<div class="cargo-board" style="--rows:' + board.rows + '" aria-label="' + escapeHtml(t("merchantGrid")) + '">' + tiles +
-    '</div><div class="grid-footer"><span>' + board.slots.length + " " + escapeHtml(t("visibleSlots")) + '</span><span>' +
+  return '<div class="board-shell" style="--board-rows:' + board.rows + '"><div class="cargo-board' + (image ? " captured" : "") + '" style="--rows:' + board.rows + '" aria-label="' + escapeHtml(t("merchantGrid")) + '">' +
+    (image ? '<img class="captured-grid" src="' + image + '" alt="" aria-hidden="true">' : "") + tiles + '</div>' +
+    '<div class="grid-footer"><span>' + board.slots.length + " " + escapeHtml(t("visibleSlots")) + '</span><span>' +
     escapeHtml(board.price ? t("priceRead") + " · " + format(board.price) + " Koen" :
-      board.active ? t("priceUnknown") : t("hoverBody")) + "</span></div>";
+      board.active ? t("priceUnknown") : t("hoverBody")) + "</span></div></div>";
 }
 
 function gridStatus() {
   if (!capture) return "gridOff";
+  if (paused) return "Paused";
   if (!merchantView) return "gridWaiting";
   if (hovered) return "gridDrag";
   return "gridReady";
 }
 
 function renderGrid() {
-  $("merchant-grid").innerHTML = gridMarkup();
+  $("merchant-grid").innerHTML = gridMarkup(undefined, undefined, undefined, merchantView?.image);
+  $("reset-grid").disabled = revealed.size === 0;
+  const pause = $("pause-grid");
+  pause.disabled = !capture;
+  pause.setAttribute("aria-pressed", String(paused));
+  pause.setAttribute("aria-label", paused ? "Resume scanning" : "Pause scanning");
+  pause.title = paused ? "Resume scanning" : "Pause scanning";
+  pause.innerHTML = icon(paused ? "play" : "pause");
   $("grid-status").textContent = t(gridStatus());
   $("grid-caption").textContent = t(merchantView ? "hoverTitle" : "gridCaption");
 }
@@ -259,14 +273,29 @@ function renderOverlay() {
   const board = doc.getElementById("overlay-grid");
   const label = doc.getElementById("overlay-status");
   const content = doc.getElementById("overlay-result");
-  if (board) board.innerHTML = gridMarkup();
+  if (board) board.innerHTML = gridMarkup(undefined, undefined, undefined, merchantView?.image);
   if (label) label.textContent = t(gridStatus());
+  const pause = doc.getElementById("overlay-pause");
+  if (pause) {
+    pause.disabled = !capture;
+    pause.setAttribute("aria-pressed", String(paused));
+    pause.innerHTML = icon(paused ? "play" : "pause") + (paused ? "Resume" : "Pause");
+  }
+  const reset = doc.getElementById("overlay-reset");
+  if (reset) reset.disabled = revealed.size === 0;
+  const setup = doc.getElementById("overlay-raid");
+  if (setup) setup.textContent = local(selectedMap.name) + " · " + local(modeLabels[modeDropdown.value]);
   if (content) {
     const estimate = result ? estimateCargo(catalog, context(), groups.get(result.id)) : null;
     const item = estimate?.items[0];
-    content.innerHTML = item ? "<strong>" + escapeHtml(item.name) + '</strong><span>' +
-      escapeHtml(t("redChance")) + " " + percent(estimate.redChance) +
-      (estimate.expectedNet !== null ? " · " + format(estimate.expectedNet) + " Koen" : "") + "</span>" : "";
+    content.innerHTML = item ? '<div class="overlay-item">' + lootImage(item, "overlay-art") +
+      '<div><strong>' + escapeHtml(item.name) + '</strong><p>' +
+      (estimate.items.length === 1 ? "1 possible item" : estimate.items.length + " possible items") +
+      (result?.slotId ? " · Slot " + result.slotId.split(":").map(n => Number(n) + 1).reverse().join("·") : "") +
+      '</p></div></div><div class="overlay-metrics"><span>Red chance <b>' + percent(estimate.redChance) +
+      '</b></span><span>' + (estimate.expectedNet !== null ? "Payback" : "Contact value") + " <b>" +
+      format(estimate.expectedNet ?? estimate.expectedValue) + '</b></span></div>' :
+      '<p class="overlay-tip">' + (capture ? "Hover until a price appears, then drag the cargo once." : "Start listening from the main window.") + "</p>";
   }
 }
 
@@ -295,6 +324,7 @@ function selectResult(match, target) {
 }
 
 function selectLiveResult(match) {
+  if (paused) return;
   const target = merchantSession?.target();
   if (!target) {
     if (merchantView) setMessage("unassigned");
@@ -444,6 +474,7 @@ function stopListening(ended) {
   merchantSession?.close();
   merchantSession = undefined;
   capture = undefined;
+  paused = false;
   $("listen").lastElementChild.textContent = t("listen");
   $("db-level").textContent = "— dBFS";
   bars.forEach(bar => bar.style.setProperty("--amp", "4%"));
@@ -527,9 +558,13 @@ async function openOverlay(showError = true) {
   }
   try {
     if (!window.documentPictureInPicture) throw new Error("unsupported");
-    overlayWindow = await window.documentPictureInPicture.requestWindow({ width: 490, height: 330 });
+    const lastSize = storage.get("overlay-size", {});
+    const width = Math.max(340, Math.min(900, Number(lastSize.width) || 420));
+    const height = Math.max(340, Math.min(900, Number(lastSize.height) || 640));
+    overlayWindow = await window.documentPictureInPicture.requestWindow({ width, height });
     const overlay = overlayWindow.document;
     overlay.title = "HydoABITool";
+    overlay.documentElement.lang = "en";
     const style = overlay.createElement("style");
     style.textContent = document.querySelector("link[rel=stylesheet]") ? await fetch(new URL("style.css", document.baseURI)).then(res => res.text()) :
       document.querySelector("style")?.textContent;
@@ -537,15 +572,44 @@ async function openOverlay(showError = true) {
     overlay.body.append(document.querySelector(".symbols").cloneNode(true));
     const panel = overlay.createElement("main");
     panel.className = "card results overlay-panel";
-    panel.innerHTML = "<div class='overlay-heading'><h2>" + escapeHtml(t("merchantGrid")) +
-      "</h2><span id='overlay-status'></span></div><div id='overlay-grid'></div><div id='overlay-result' class='overlay-result'></div>";
+    panel.innerHTML = '<header class="overlay-heading"><div class="overlay-brand"><img src="' +
+      new URL("hydo.svg", document.baseURI).href + '" alt="" width="27" height="27"><div><h1>HydoABITool</h1>' +
+      '<p id="overlay-raid"></p></div></div><button id="overlay-close" type="button" class="icon-button" aria-label="Close overlay" title="Close overlay">' +
+      icon("close") + '</button></header><div class="overlay-toolbar"><span id="overlay-status" class="status-pill"></span>' +
+      '<div><button id="overlay-pause" class="button outline" type="button" aria-pressed="false">Pause</button>' +
+      '<button id="overlay-reset" type="button" class="icon-button" aria-label="Clear revealed slots" title="Clear revealed slots">' +
+      icon("reset") + '</button></div></div><div id="overlay-grid"></div><div id="overlay-result" class="overlay-result"></div>';
     overlay.body.append(panel);
     panel.addEventListener("click", chooseSlot);
+    overlay.getElementById("overlay-pause").addEventListener("click", togglePause);
+    overlay.getElementById("overlay-reset").addEventListener("click", resetGrid);
+    overlay.getElementById("overlay-close").addEventListener("click", () => overlayWindow.close());
+    const windowHandle = overlayWindow;
+    overlayWindow.addEventListener("pagehide", () => {
+      storage.set("overlay-size", { width: windowHandle.innerWidth, height: windowHandle.innerHeight });
+      if (overlayWindow === windowHandle) overlayWindow = undefined;
+    }, { once: true });
     renderOverlay();
   } catch {
     overlayWindow?.close();
     if (showError) setMessage("overlayError");
   }
+}
+
+function resetGrid() {
+  revealed = new Map();
+  result = null;
+  renderResult();
+}
+
+function togglePause() {
+  if (!capture) return;
+  paused = !paused;
+  merchantSession?.setPaused(paused);
+  hovered = undefined;
+  hoverHint = undefined;
+  renderGrid();
+  renderOverlay();
 }
 
 let mirrorSession;
@@ -667,6 +731,8 @@ async function openPhone() {
 }
 
 $("merchant-grid").addEventListener("click", chooseSlot);
+$("reset-grid").addEventListener("click", resetGrid);
+$("pause-grid").addEventListener("click", togglePause);
 $("mirror-grid").addEventListener("click", event => {
   const button = event.target.closest("[data-slot]");
   if (button && mirrorState?.board?.slots.find(slot => slot.id === button.dataset.slot)?.record) {

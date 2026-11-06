@@ -6,7 +6,7 @@ const FRAME_SIZE = BAND_COUNT + 1;
 const FEATURE_VERSION = 1;
 const MAX_INPUT_SECONDS = 8;
 const MAX_FRAMES = 160;
-const MIN_SCORE = 0.88;
+const MIN_SCORE = 0.89;
 
 const hann = Float32Array.from({ length: WINDOW_SIZE }, (_, i) =>
   0.5 - 0.5 * Math.cos(2 * Math.PI * i / (WINDOW_SIZE - 1)));

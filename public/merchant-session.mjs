@@ -45,6 +45,7 @@ export function createMerchantSession(stream, { onGrid, onHover, onHint, priceOp
   let activeRead = false;
   let lastSample = -Infinity;
   let lastVideoTime = -Infinity;
+  let paused = false;
   const hints = new Map();
   const readTimes = new Map();
 
@@ -74,7 +75,7 @@ export function createMerchantSession(stream, { onGrid, onHover, onHint, priceOp
   }
 
   function sample() {
-    if (stopped || video.readyState < 2 || !surface || !video.videoWidth || !video.videoHeight) return;
+    if (stopped || paused || video.readyState < 2 || !surface || !video.videoWidth || !video.videoHeight) return;
     const now = performance.now();
     if (now - lastSample < FRAME_INTERVAL - 15 || lastVideoTime === video.currentTime) return;
     lastSample = now;
@@ -112,7 +113,11 @@ export function createMerchantSession(stream, { onGrid, onHover, onHint, priceOp
     proposedKey = key;
     if (proposedCount < 2) return;
     if (stable?.key !== key) {
-      stable = { key, grid };
+      const crop = document.createElement("canvas");
+      crop.width = Math.round(grid.pitch * grid.columns);
+      crop.height = Math.round(grid.pitch * grid.rows);
+      crop.getContext("2d").drawImage(canvas, grid.x, grid.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+      stable = { key, grid, image: crop.toDataURL("image/webp", .85) };
       hoverCandidate = undefined;
       latestTarget = undefined;
       onGrid(stable);
@@ -120,6 +125,23 @@ export function createMerchantSession(stream, { onGrid, onHover, onHint, priceOp
     }
     const hit = detectHoveredSlot(frame, grid, previousFrame);
     const observedSlot = hit && (hit.slot ?? grid.slots.find(candidate => candidate.id === (hit.id ?? hit.slotId)));
+    if (observedSlot) {
+      const exact = stable.grid.slots.some(slot => slot.col === observedSlot.col && slot.row === observedSlot.row &&
+        slot.w === observedSlot.w && slot.h === observedSlot.h);
+      if (!exact) {
+        const intersects = slot => slot.col < observedSlot.col + observedSlot.w &&
+          slot.col + slot.w > observedSlot.col && slot.row < observedSlot.row + observedSlot.h &&
+          slot.row + slot.h > observedSlot.row;
+        const sameArea = stable.grid.slots.filter(intersects);
+        if (sameArea.length && sameArea.every(slot => slot.w * slot.h <= observedSlot.w * observedSlot.h)) {
+          const { id, col, row, w, h } = observedSlot;
+          stable.grid = { ...stable.grid, slots: [
+            ...stable.grid.slots.filter(slot => !intersects(slot)), { id, col, row, w, h },
+          ].sort((left, right) => left.row - right.row || left.col - right.col) };
+          onGrid(stable);
+        }
+      }
+    }
     const slot = observedSlot && stable.grid.slots.find(candidate =>
       observedSlot.col >= candidate.col && observedSlot.col < candidate.col + candidate.w &&
       observedSlot.row >= candidate.row && observedSlot.row < candidate.row + candidate.h);
@@ -142,6 +164,11 @@ export function createMerchantSession(stream, { onGrid, onHover, onHint, priceOp
   const timer = setInterval(sample, FRAME_INTERVAL);
   return {
     sample,
+    setPaused(value) {
+      paused = value;
+      latestTarget = undefined;
+      hoverCandidate = undefined;
+    },
     target() {
       if (!latestTarget || performance.now() - latestTarget.time > TARGET_LIFETIME) return null;
       const key = latestTarget.view + "/" + latestTarget.slot.id;

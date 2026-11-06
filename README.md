@@ -2,6 +2,8 @@
 
 HydoABITool is an unofficial Arena Breakout: Infinite Field Merchant companion. It reads the merchant grid and tooltip from a shared game window, matches pickup or drop sounds, and shows possible loot in the corresponding slot. The dashboard and over-game window use the same detected grid. The optional phone view mirrors the grid and results from desktop.
 
+The dashboard and popup display the captured merchant panel underneath the predictions, preserving the visible slot layout. The popup includes pause/resume, clear results, a close control, and remembered window dimensions. Item artwork stays in its original color. A slot with multiple possible items shows a candidate count.
+
 ## Run locally
 
 With Node.js 22, run `npm run build` to check the shipped assets, then `npm start`. Open the localhost URL in desktop Chrome or Edge. Select your raid map and mode, click **Listen to game**, and share the game window with audio enabled. Open the merchant, hover until the price appears, and drag the cargo once. **Analyze clip** is an optional diagnostics tool under **Guides**.
@@ -24,3 +26,5 @@ Vercel deployment protection, if enabled on the project, controls who can open t
 - [Tesseract.js](https://github.com/naptha/tesseract.js) performs tooltip OCR in the browser. The QR library license ships in `public/qrcode-license.txt`.
 
 Sound matches identify a group of possible items. Loot probabilities use the bundled reference snapshot and can differ from current game data. The scanner was verified using recorded merchant frames and reference sounds.
+
+Verification covered all 76 reference clips at original volume, after resampling, after volume and timing changes, under light noise, and through the live audio entry point. Every clip matched the correct sound group in those checks. A stronger-noise check returned 69 correct matches and 7 unmatched clips. Live gameplay and additional game UI scales still need user testing.
