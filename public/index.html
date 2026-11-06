@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f5">
+  <meta name="description" content="Listen for Field Merchant cargo sounds and compare possible contents in Arena Breakout: Infinite.">
+  <title>HydoABITool · Field Merchant scanner</title>
+  <link rel="icon" href="hydo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-wave" viewBox="0 0 24 24"><path d="M2 12h4l3-7 5 14 3-7h5"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 10-7 10S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></symbol>
+    <symbol id="i-guide" viewBox="0 0 24 24"><path d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-3H4zM20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-3h5z"/></symbol>
+    <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+    <symbol id="i-overlay" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="11" y="11" width="8" height="6" rx="1"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M12 17v-6m-3 3 3-3 3 3"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 8v8l9 5 9-5V8M12 13v8M7.5 5.5l9 5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 12 7-12 7z"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 1 3 7M3 5v7h7m2-5v5l3 2"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  </svg>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="#workspace" aria-label="HydoABITool"><img class="brand-mark" src="hydo.svg" width="38" height="38" alt=""><span>Hydo<span class="brand-muted">ABI</span>Tool</span></a>
+      <nav aria-label="Main navigation">
+        <a href="#workspace" data-nav="workspace" data-i18n="workspace">Workspace</a>
+        <a href="#maps" data-nav="maps">Maps</a>
+        <a href="#guides" data-nav="guides" data-i18n="guides">Guides</a>
+      </nav>
+    </div>
+  </header>
+  <main class="shell">
+    <section id="workspace" data-page>
+      <div class="intro">
+        <div><p class="eyebrow" data-i18n="game">ARENA BREAKOUT: INFINITE</p><h1 data-i18n="title">Field Merchant</h1><p class="lead" data-i18n="subtitle">Reveal what’s inside the merchant’s cargo.</p></div>
+        <span class="status-pill privacy"><span class="status-dot"></span><span data-i18n="privacy">Game audio and video stay on this device</span></span>
+      </div>
+      <div class="top-grid">
+        <section class="scanner" aria-labelledby="scanner-title">
+          <div class="scanner-head">
+            <div class="scanner-title"><span class="scanner-icon"><svg><use href="#i-wave"/></svg></span><div><h2 id="scanner-title" data-i18n="scanner">Game scanner</h2><p id="scanner-caption" data-i18n="scannerCaption">Read the merchant grid and match cargo sounds.</p></div></div>
+            <span class="status-pill scanner-status"><span class="status-dot"></span><span id="status">Ready</span></span>
+          </div>
+          <div class="signal" aria-hidden="true"><div class="bars" id="bars"></div></div>
+          <div class="signal-legend" aria-hidden="true"><span data-i18n="input">INPUT SIGNAL</span><span id="db-level">— dBFS</span></div>
+          <div class="scanner-actions">
+            <button class="button light" id="listen" type="button"><svg><use href="#i-screen"/></svg><span data-i18n="listen">Listen to game</span></button>
+            <div class="spacer"></div>
+            <button class="icon-button scanner-tool" id="overlay" type="button" aria-label="Over-game overlay" title="Over-game overlay"><svg><use href="#i-overlay"/></svg></button>
+            <button class="icon-button scanner-tool" id="phone" type="button" aria-label="Phone view" title="Phone view"><svg><use href="#i-phone"/></svg></button>
+          </div>
+          <input id="clip-file" type="file" accept="audio/*,video/*,.ogg,.wav,.mp3,.m4a,.webm" hidden>
+          <p id="scanner-message" class="scanner-message" role="status"></p>
+        </section>
+        <section class="card raid" aria-labelledby="raid-title">
+          <div class="section-head"><span class="section-icon"><svg><use href="#i-pin"/></svg></span><div><h2 id="raid-title" data-i18n="raid">Raid setup</h2><p data-i18n="raidCaption">Choose the map and mode you’re playing.</p></div></div>
+          <div class="fields">
+            <div class="dropdown" id="map">
+              <span class="field-label" id="map-label">Map</span>
+              <button class="select-trigger" type="button" aria-labelledby="map-label map-value" aria-haspopup="listbox" aria-expanded="false" aria-controls="map-options"><span id="map-value" data-value>Choose</span><svg><use href="#i-chevron"/></svg></button>
+              <div class="select-menu" id="map-options" role="listbox" aria-labelledby="map-label" hidden></div>
+            </div>
+            <div class="dropdown" id="mode">
+              <span class="field-label" id="mode-label">Mode</span>
+              <button class="select-trigger" type="button" aria-labelledby="mode-label mode-value" aria-haspopup="listbox" aria-expanded="false" aria-controls="mode-options"><span id="mode-value" data-value>Choose</span><svg><use href="#i-chevron"/></svg></button>
+              <div class="select-menu" id="mode-options" role="listbox" aria-labelledby="mode-label" hidden></div>
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" id="auto-overlay"><span data-i18n="autoOverlay">Open overlay when listening</span></label>
+          <p class="setup-note" data-i18n="autoContext">Cargo type and price are read from the game tooltip when visible.</p>
+        </section>
+      </div>
+      <section class="card results" aria-labelledby="result-title">
+        <div class="section-head result-header">
+          <span class="section-icon"><svg><use href="#i-box"/></svg></span>
+          <div><h2 id="result-title" data-i18n="merchantGrid">Merchant grid</h2><p id="grid-caption" data-i18n="gridCaption">Open the merchant in your shared game window.</p></div>
+          <span id="grid-status" class="status-pill grid-status"></span>
+        </div>
+        <div id="merchant-grid" aria-label="Detected cargo slots"></div>
+        <div id="result" aria-live="polite" hidden></div>
+      </section>
+      <div class="bottom-grid">
+        <section class="card compact" aria-labelledby="history-title">
+          <div class="section-head"><span class="section-icon"><svg><use href="#i-history"/></svg></span><div><h2 id="history-title" data-i18n="history">Recent scans</h2><p data-i18n="historyCaption">Your local session history.</p></div><button id="clear-history" type="button" class="link-button" data-i18n="clear">Clear</button></div>
+          <div id="history-list" class="mini-list"></div>
+        </section>
+        <section class="card compact" aria-labelledby="finds-title">
+          <div class="section-head"><span class="section-icon"><svg><use href="#i-box"/></svg></span><div><h2 id="finds-title" data-i18n="finds">Community red finds</h2><p id="finds-caption" data-i18n="findsCaption">Recent community finds.</p></div></div>
+          <div id="finds-list" class="mini-list"></div>
+        </section>
+      </div>
+    </section>
+    <section id="maps" data-page hidden>
+      <div class="intro"><div><p class="eyebrow" data-i18n="game">ARENA BREAKOUT: INFINITE</p><h1 data-i18n="maps">Spawn maps</h1><p class="lead" data-i18n="mapsIntro">Find the Field Merchant on all six raid maps.</p></div></div>
+      <div class="map-layout"><div id="map-list" class="map-list" aria-label="Choose a map"></div><section class="card map-card" id="map-detail"></section></div>
+    </section>
+    <section id="guides" data-page hidden>
+      <div class="intro"><div><p class="eyebrow" data-i18n="game">ARENA BREAKOUT: INFINITE</p><h1 data-i18n="guides">Guides</h1><p class="lead" data-i18n="guidesIntro">Set up audio capture and understand the merchant’s cargo.</p></div></div>
+      <section class="card how-to">
+        <h2 data-i18n="quickStart">Quick start</h2>
+        <ol class="steps">
+          <li><span>01</span><strong data-i18n="stepOne">Match your raid</strong><p data-i18n="stepOneBody">Choose the map and mode you’re playing.</p></li>
+          <li><span>02</span><strong data-i18n="stepTwo">Share game audio</strong><p data-i18n="stepTwoBody">Use desktop Chrome or Edge, choose the game window, and enable audio sharing.</p></li>
+          <li><span>03</span><strong data-i18n="stepThree">Move the cargo</strong><p data-i18n="stepThreeBody">Open the merchant and wait for the grid. Scroll to see more slots. Hover until the price appears, then drag and drop once.</p></li>
+        </ol>
+      </section>
+      <div id="guide-list" class="guide-list"></div>
+      <details class="card diagnostics">
+        <summary data-i18n="diagnostics">Test the sound matcher</summary>
+        <p data-i18n="diagnosticCaption">Analyze a saved recording or browse reference sounds. In a raid, use Listen to game.</p>
+        <div class="diagnostic-actions">
+          <button class="button outline" id="upload" type="button"><svg><use href="#i-file"/></svg><span data-i18n="upload">Analyze clip</span></button>
+          <button id="manual" type="button" class="button outline"><span data-i18n="manual">Browse sounds</span><svg><use href="#i-arrow"/></svg></button>
+        </div>
+      </details>
+    </section>
+    <section id="mirror" class="mirror card" data-page hidden><div class="mirror-heading"><div><p class="eyebrow">HYDOABITOOL · COMPANION</p><h1>Merchant grid</h1></div><span id="mirror-status" class="status-pill">Connecting</span></div><div id="mirror-grid"></div><div id="mirror-result"></div></section>
+  </main>
+  <footer class="site-footer"><div class="shell"><span>HydoABITool</span><span>Unofficial Field Merchant companion</span></div></footer>
+  <dialog id="sound-dialog">
+    <div class="dialog-head"><div><h2 data-i18n="manual">Browse sounds</h2><p data-i18n="browseCaption">Select a sound group to look up its possible items.</p></div><form method="dialog"><button class="icon-button" aria-label="Close"><svg><use href="#i-close"/></svg></button></form></div>
+    <input id="sound-search" type="search" autocomplete="off" placeholder="Search sounds or items" aria-label="Search sounds or items">
+    <div id="sound-list"></div>
+  </dialog>
+  <dialog id="phone-dialog">
+    <div class="dialog-head"><div><h2 data-i18n="phone">Phone view</h2><p id="phone-help"></p></div><form method="dialog"><button class="icon-button" aria-label="Close"><svg><use href="#i-close"/></svg></button></form></div>
+    <div id="phone-qr"></div><input id="phone-url" type="url" readonly aria-label="Phone view link">
+    <button id="copy-phone" class="button primary" type="button"><svg><use href="#i-copy"/></svg><span data-i18n="copy">Copy link</span></button>
+    <p id="phone-status" role="status"></p>
+  </dialog>
+  <script defer src="qrcode.js"></script>
+  <script type="module" src="app.mjs"></script>
+</body>
+</html>
