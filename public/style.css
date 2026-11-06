@@ -19,13 +19,16 @@ svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke
 .brand{display:inline-flex;align-items:center;gap:9px;text-decoration:none;font-size:20px;letter-spacing:-.85px;font-weight:780;white-space:nowrap}
 .brand-mark{width:38px;height:38px;display:block;flex:none}
 .brand-muted{color:#666662}
-nav{height:100%;display:flex;align-items:center;gap:31px}
-nav a{display:grid;place-items:center;height:100%;text-decoration:none;font-size:13px;font-weight:650;color:var(--muted);position:relative;white-space:nowrap}
+nav{height:100%;display:flex;align-items:center;gap:9px;margin-left:auto}
+nav a{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:100%;min-width:42px;padding:0 8px;text-decoration:none;font-size:12px;font-weight:650;color:var(--muted);position:relative;white-space:nowrap}
+nav a svg{width:17px;height:17px}
 nav a[aria-current]{color:var(--ink)}
 nav a[aria-current]::after{content:"";position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--ink)}
 .icon-button{display:inline-grid;place-items:center;background:transparent;border:1px solid var(--line);color:inherit;border-radius:10px;width:40px;height:37px;font-size:12px;font-weight:700}
 .icon-button:hover,.outline:hover{background:var(--soft)}
-.intro{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin:45px 0 27px}
+.subtle{border-color:transparent}
+.site-header #tutorial-open{margin-left:3px}
+.intro{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin:36px 0 24px}
 .eyebrow{font-size:10px;letter-spacing:1.7px;font-weight:760;color:var(--muted);margin-bottom:11px}
 h1{font-size:clamp(36px,5vw,59px);font-weight:760;line-height:1.02;letter-spacing:-.065em}
 .lead{margin-top:12px;font-size:16px;line-height:1.5;color:var(--muted)}
@@ -47,7 +50,7 @@ h1{font-size:clamp(36px,5vw,59px);font-weight:760;line-height:1.02;letter-spacin
 .scanner-status{background:#2a2a2a;border-color:#414141;color:#c7c7c7}
 .scanner-status[data-active="true"]{color:#fff}
 .scanner-status[data-active="true"] .status-dot{box-shadow:0 0 0 3px #ffffff2b}
-.signal{display:flex;align-items:center;height:104px;margin:18px 0 5px;padding:12px 15px;background:#111;border:1px solid #303030;border-radius:12px;overflow:hidden;position:relative}
+.signal{display:flex;align-items:center;height:76px;margin:18px 0 5px;padding:12px 15px;background:#111;border:1px solid #303030;border-radius:12px;overflow:hidden;position:relative}
 .signal::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(to right,#ffffff0b 0 1px,transparent 1px 10%),linear-gradient(transparent calc(50% - .5px),#ffffff21 calc(50% - .5px) calc(50% + .5px),transparent calc(50% + .5px))}
 .bars{display:flex;align-items:center;justify-content:space-between;gap:2px;height:100%;width:100%;position:relative}
 .bars i{height:var(--amp,4%);width:4px;min-width:1px;flex:0 1 4px;border-radius:4px;background:#b6b6b6;opacity:.55}
@@ -85,7 +88,7 @@ input::placeholder{color:#777}
 .check{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px;line-height:1.35}
 .check input{accent-color:#242424;margin:0}
 .results{margin:16px 0}
-.result-header .button,.section-head .link-button{margin-left:auto}
+.result-header .button,.section-head .link-button,.section-head>#clear-history{margin-left:auto}
 .setup-note{margin-top:16px;padding:10px 12px;background:var(--soft);border-radius:9px;color:var(--muted);font-size:12px;line-height:1.4}
 .grid-tools{margin-left:auto;display:flex;align-items:center;gap:7px}
 .grid-status{background:var(--soft);color:var(--muted)}
@@ -110,8 +113,11 @@ input::placeholder{color:#777}
 .slot-count{position:absolute;right:3px;bottom:3px;padding:2px 3px;font:9px/1 ui-monospace,monospace;color:#fff;background:#0009}
 .grid-footer{display:flex;justify-content:space-between;gap:8px;margin:8px auto 0;color:var(--muted);font-size:11px;line-height:1.35}
 .cargo-result-title{font-size:14px;font-weight:710;border-top:1px solid var(--line);padding-top:12px;margin-top:15px}
-.diagnostics{padding:16px;margin-top:14px}
-.diagnostics summary{cursor:pointer;font-size:13px;font-weight:700}
+.diagnostics{width:100%;margin-top:9px}
+.diagnostics summary{cursor:pointer;list-style:none}
+.diagnostics summary::-webkit-details-marker{display:none}
+.diagnostics[open] summary svg{transform:rotate(180deg)}
+.diagnostic-panel{padding:12px 2px}
 .diagnostics p{font-size:12px;color:var(--muted);line-height:1.4;margin:7px 0 9px}
 .diagnostic-actions{display:flex;gap:7px;flex-wrap:wrap}
 .empty{margin-top:15px;display:grid;justify-items:center;text-align:center;align-content:center;min-height:140px;border:1px dashed #deded9;border-radius:11px;background:#fafaf9;padding:16px}
@@ -160,8 +166,10 @@ button.mini-row:hover{text-decoration:underline}
 .steps li strong{font-size:13px}
 .steps li p,.guide-list p{font-size:12px;color:var(--muted);line-height:1.5;margin-top:5px}
 .guide-list{display:grid;gap:9px}
-.guide-list details{padding:15px}
-.guide-list summary{cursor:pointer;font-weight:690}
+.guide-list summary{cursor:pointer;font-weight:650;list-style:none}
+.guide-list summary::-webkit-details-marker{display:none}
+.guide-list details[open] summary svg{transform:rotate(180deg)}
+.guide-panel{padding:8px 12px 14px}
 .guide-list h3{font-size:13px;margin-top:13px}
 dialog{width:min(520px,calc(100% - 26px));max-height:min(72vh,620px);padding:17px;border-radius:14px;border:1px solid var(--line);color:var(--ink);background:#fff;box-shadow:0 16px 65px #0003}
 dialog::backdrop{background:#15151575}
@@ -175,6 +183,22 @@ dialog::backdrop{background:#15151575}
 #phone-qr{margin:8px auto 10px;text-align:center}
 #phone-qr canvas{max-width:100%;height:auto}
 #phone-url{margin-bottom:8px}
+#phone-status{font-size:11px;color:var(--muted);line-height:1.5;margin-top:9px}
+#copy-phone{width:100%}
+.tooltip{position:fixed;z-index:1000;padding:7px 9px;border-radius:7px;background:#222;color:#fff;box-shadow:0 3px 12px #0002;font-size:11px;font-weight:550;line-height:1.3;max-width:min(220px,calc(100vw - 16px));pointer-events:none}
+.tutorial-target{outline:2px solid #282828!important;outline-offset:5px!important;scroll-margin-block:90px}
+.tutorial-card{position:fixed;z-index:1001;width:min(320px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;padding:16px;border:1px solid #d1d1cb;border-radius:14px;background:#fff;color:var(--ink);box-shadow:0 12px 42px #0003;text-align:left}
+.tutorial-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-5px -5px 4px 0}
+.tutorial-top>span{font:10px ui-monospace,monospace;letter-spacing:.05em;color:var(--muted)}
+.tutorial-top .icon-button{width:28px;height:28px}
+.tutorial-card h2{font-size:16px;letter-spacing:-.35px}
+.tutorial-card p{font-size:12px;color:var(--muted);line-height:1.55;margin-top:7px}
+.tutorial-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px}
+.tutorial-actions>div{display:flex;align-items:center;gap:6px}
+.tutorial-actions .button{min-height:33px}
+.tutorial-actions .icon-button{width:33px;height:33px}
+.tutorial-actions [data-tour="back"] svg{transform:rotate(180deg);width:15px;height:15px}
+.tutorial-skip{border:0;background:transparent;color:var(--muted);padding:7px 0;font-size:11px}
 .mirror{margin-top:22px}
 .mirror h1{font-size:32px}
 .mirror-heading{display:flex;justify-content:space-between;align-items:center;gap:9px}
@@ -210,7 +234,7 @@ dialog::backdrop{background:#15151575}
   .top-grid,.bottom-grid{grid-template-columns:1fr}
   .intro{margin-top:30px;align-items:start;flex-direction:column;gap:10px}
   .site-header{height:58px}
-  nav{gap:13px}
+  nav{gap:3px}
   nav a{font-size:11px}
   .brand{font-size:16px}
   .brand-mark{width:33px;height:33px}
@@ -233,8 +257,9 @@ dialog::backdrop{background:#15151575}
 @media(max-width:530px){
   .site-header{height:auto}
   .header-inner{min-height:56px;gap:7px}
-  nav{align-self:stretch;gap:12px}
-  nav a{min-height:48px;font-size:11px}
+  nav{align-self:stretch;gap:0}
+  nav a{min-height:48px;min-width:35px;padding-inline:6px}
+  .nav-label{display:none}
   .brand{gap:6px;font-size:15px;letter-spacing:-.55px}
   .brand-mark{width:28px;height:28px}
   .intro{margin-top:24px;margin-bottom:17px}
@@ -245,6 +270,7 @@ dialog::backdrop{background:#15151575}
   .scanner-actions .button,.scanner-actions .icon-button{min-height:43px}
   .fields{gap:8px;margin:14px 0 12px}
   .select-trigger,.select-menu button{min-height:44px}
+  .diagnostics summary{min-height:44px}
   .result-header{gap:8px}
   .grid-tools{gap:4px;flex-wrap:wrap;justify-content:flex-end}
   .grid-tools .icon-button{width:30px;height:32px}

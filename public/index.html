@@ -28,15 +28,17 @@
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
     <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
     <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1 .5-1.5 1-1.5 2M12 16h.01"/></symbol>
   </svg>
   <header class="site-header">
     <div class="shell header-inner">
       <a class="brand" href="#workspace" aria-label="HydoABITool"><img class="brand-mark" src="hydo.svg" width="38" height="38" alt=""><span>Hydo<span class="brand-muted">ABI</span>Tool</span></a>
       <nav aria-label="Main navigation">
-        <a href="#workspace" data-nav="workspace" data-i18n="workspace">Workspace</a>
-        <a href="#maps" data-nav="maps">Maps</a>
-        <a href="#guides" data-nav="guides" data-i18n="guides">Guides</a>
+        <a href="#workspace" data-nav="workspace" aria-label="Workspace" data-tooltip="Workspace"><svg aria-hidden="true"><use href="#i-wave"/></svg><span class="nav-label">Workspace</span></a>
+        <a href="#maps" data-nav="maps" aria-label="Spawn maps" data-tooltip="Spawn maps"><svg aria-hidden="true"><use href="#i-pin"/></svg><span class="nav-label">Maps</span></a>
+        <a href="#guides" data-nav="guides" aria-label="Guides" data-tooltip="Guides"><svg aria-hidden="true"><use href="#i-guide"/></svg><span class="nav-label">Guides</span></a>
       </nav>
+      <button id="tutorial-open" class="icon-button subtle" type="button" aria-label="Show tutorial" data-tooltip="Show tutorial"><svg aria-hidden="true"><use href="#i-help"/></svg></button>
     </div>
   </header>
   <main class="shell">
@@ -56,8 +58,8 @@
           <div class="scanner-actions">
             <button class="button light" id="listen" type="button"><svg><use href="#i-screen"/></svg><span data-i18n="listen">Listen to game</span></button>
             <div class="spacer"></div>
-            <button class="icon-button scanner-tool" id="overlay" type="button" aria-label="Over-game overlay" title="Over-game overlay"><svg><use href="#i-overlay"/></svg></button>
-            <button class="icon-button scanner-tool" id="phone" type="button" aria-label="Phone view" title="Phone view"><svg><use href="#i-phone"/></svg></button>
+            <button class="icon-button scanner-tool" id="overlay" type="button" aria-label="Over-game overlay" data-tooltip="Over-game overlay"><svg><use href="#i-overlay"/></svg></button>
+            <button class="icon-button scanner-tool" id="phone" type="button" aria-label="Share to phone" data-tooltip="Share to phone"><svg><use href="#i-phone"/></svg></button>
           </div>
           <input id="clip-file" type="file" accept="audio/*,video/*,.ogg,.wav,.mp3,.m4a,.webm" hidden>
           <p id="scanner-message" class="scanner-message" role="status"></p>
@@ -77,21 +79,20 @@
             </div>
           </div>
           <label class="check"><input type="checkbox" id="auto-overlay"><span data-i18n="autoOverlay">Open overlay when listening</span></label>
-          <p class="setup-note" data-i18n="autoContext">Cargo type and price are read from the game tooltip when visible.</p>
         </section>
       </div>
       <section class="card results" aria-labelledby="result-title">
         <div class="section-head result-header">
           <span class="section-icon"><svg><use href="#i-box"/></svg></span>
           <div><h2 id="result-title" data-i18n="merchantGrid">Merchant grid</h2><p id="grid-caption" data-i18n="gridCaption">Open the merchant in your shared game window.</p></div>
-          <div class="grid-tools"><span id="grid-status" class="status-pill grid-status"></span><button id="pause-grid" type="button" class="icon-button" aria-label="Pause scanning" aria-pressed="false" title="Pause scanning"><svg><use href="#i-pause"/></svg></button><button id="reset-grid" type="button" class="icon-button" aria-label="Clear revealed slots" title="Clear revealed slots"><svg><use href="#i-reset"/></svg></button></div>
+          <div class="grid-tools"><span id="grid-status" class="status-pill grid-status"></span><button id="pause-grid" type="button" class="icon-button" aria-label="Pause scanning" aria-pressed="false" data-tooltip="Pause scanning"><svg><use href="#i-pause"/></svg></button><button id="reset-grid" type="button" class="icon-button" aria-label="Clear revealed slots" data-tooltip="Clear revealed slots"><svg><use href="#i-reset"/></svg></button></div>
         </div>
         <div id="merchant-grid" aria-label="Detected cargo slots"></div>
         <div id="result" aria-live="polite" hidden></div>
       </section>
       <div class="bottom-grid">
         <section class="card compact" aria-labelledby="history-title">
-          <div class="section-head"><span class="section-icon"><svg><use href="#i-history"/></svg></span><div><h2 id="history-title" data-i18n="history">Recent scans</h2><p data-i18n="historyCaption">Your local session history.</p></div><button id="clear-history" type="button" class="link-button" data-i18n="clear">Clear</button></div>
+          <div class="section-head"><span class="section-icon"><svg><use href="#i-history"/></svg></span><div><h2 id="history-title" data-i18n="history">Recent scans</h2></div><button id="clear-history" type="button" class="icon-button subtle" aria-label="Clear scan history" data-tooltip="Clear scan history"><svg aria-hidden="true"><use href="#i-reset"/></svg></button></div>
           <div id="history-list" class="mini-list"></div>
         </section>
         <section class="card compact" aria-labelledby="finds-title">
@@ -115,12 +116,14 @@
         </ol>
       </section>
       <div id="guide-list" class="guide-list"></div>
-      <details class="card diagnostics">
-        <summary data-i18n="diagnostics">Test the sound matcher</summary>
+      <details class="diagnostics">
+        <summary class="select-trigger"><span>Test the sound matcher</span><svg aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+        <div class="diagnostic-panel">
         <p data-i18n="diagnosticCaption">Analyze a saved recording or browse reference sounds. In a raid, use Listen to game.</p>
         <div class="diagnostic-actions">
           <button class="button outline" id="upload" type="button"><svg><use href="#i-file"/></svg><span data-i18n="upload">Analyze clip</span></button>
-          <button id="manual" type="button" class="button outline"><span data-i18n="manual">Browse sounds</span><svg><use href="#i-arrow"/></svg></button>
+          <button id="manual" type="button" class="icon-button" aria-label="Browse reference sounds" data-tooltip="Browse reference sounds"><svg aria-hidden="true"><use href="#i-wave"/></svg></button>
+        </div>
         </div>
       </details>
     </section>
@@ -128,12 +131,12 @@
   </main>
   <footer class="site-footer"><div class="shell"><span>HydoABITool</span><span>Unofficial Field Merchant companion</span></div></footer>
   <dialog id="sound-dialog">
-    <div class="dialog-head"><div><h2 data-i18n="manual">Browse sounds</h2><p data-i18n="browseCaption">Select a sound group to look up its possible items.</p></div><form method="dialog"><button class="icon-button" aria-label="Close"><svg><use href="#i-close"/></svg></button></form></div>
+    <div class="dialog-head"><div><h2>Browse sounds</h2><p data-i18n="browseCaption">Select a sound group to look up its possible items.</p></div><form method="dialog"><button class="icon-button" aria-label="Close" data-tooltip="Close"><svg><use href="#i-close"/></svg></button></form></div>
     <input id="sound-search" type="search" autocomplete="off" placeholder="Search sounds or items" aria-label="Search sounds or items">
     <div id="sound-list"></div>
   </dialog>
   <dialog id="phone-dialog">
-    <div class="dialog-head"><div><h2 data-i18n="phone">Phone view</h2><p id="phone-help"></p></div><form method="dialog"><button class="icon-button" aria-label="Close"><svg><use href="#i-close"/></svg></button></form></div>
+    <div class="dialog-head"><div><h2>Share to phone</h2><p id="phone-help"></p></div><form method="dialog"><button class="icon-button" aria-label="Close" data-tooltip="Close"><svg><use href="#i-close"/></svg></button></form></div>
     <div id="phone-qr"></div><input id="phone-url" type="url" readonly aria-label="Phone view link">
     <button id="copy-phone" class="button primary" type="button"><svg><use href="#i-copy"/></svg><span data-i18n="copy">Copy link</span></button>
     <p id="phone-status" role="status"></p>

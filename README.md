@@ -4,6 +4,8 @@ HydoABITool is an unofficial Arena Breakout: Infinite Field Merchant companion. 
 
 The dashboard and popup display the captured merchant panel underneath the predictions, preserving the visible slot layout. The popup includes pause/resume, clear results, a close control, and remembered window dimensions. Item artwork stays in its original color. A slot with multiple possible items shows a candidate count.
 
+The first visit opens a short tutorial anchored to the main controls. Completing, skipping, or dismissing it saves a one-year preference cookie. The help icon replays it. Icon controls include keyboard and hover tooltips.
+
 ## Run locally
 
 With Node.js 22, run `npm run build` to check the shipped assets, then `npm start`. Open the localhost URL in desktop Chrome or Edge. Select your raid map and mode, click **Listen to game**, and share the game window with audio enabled. Open the merchant, hover until the price appears, and drag the cargo once. **Analyze clip** is an optional diagnostics tool under **Guides**.
@@ -15,6 +17,8 @@ Game audio and video are processed in the browser. The phone relay receives dete
 Import this repository with the project root set to the repository root. The checked-in `vercel.json` selects the static frontend and the Vercel Functions in `api/`. The scanner works without environment variables or an app account.
 
 Set `HYDO_REDIS_REST_URL` and `HYDO_REDIS_REST_TOKEN` in Vercel if you want live phone mirroring. Use a Redis REST endpoint that accepts JSON command arrays and supports `EVAL`, `SET EX NX`, and `SET KEEPTTL`. Keep the token server-side. With no store configured, the phone button can share a snapshot of the current result.
+
+Phone sharing opens a QR code before the first scan. A connected live relay sends the initial waiting state and later grid updates. When the relay is unavailable, the dialog labels its link as a snapshot or waiting page.
 
 Vercel deployment protection, if enabled on the project, controls who can open the hosted URL.
 

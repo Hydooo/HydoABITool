@@ -3,6 +3,8 @@ import { estimateCargo } from "./estimate.mjs";
 import { captureGame, liveDetector, recognizeFile } from "./audio.mjs";
 import { createMerchantSession } from "./merchant-session.mjs";
 import { Dropdown } from "./dropdown.mjs";
+import { attachTooltips } from "./tooltips.mjs";
+import { startTutorial } from "./tutorial.mjs";
 
 const $ = id => document.getElementById(id);
 const storage = {
@@ -30,7 +32,7 @@ Object.assign(words, {
   redChance: "Red chance", expectedValue: "Expected value", expectedNet: "Expected payback",
   match: "Audio similarity", candidate: "Possible item", rarity: "Rarity", size: "Size",
   odds: "Chance", contact: "Contact value", red: "Red", gold: "Gold", purple: "Purple", blue: "Blue",
-  group: "Sound", manualResult: "Manual selection", noHistory: "No scans yet.",
+  group: "Sound", manualResult: "Manual selection", manual: "Browse sounds", noHistory: "No scans yet.",
   noFinds: "The public feed is unavailable.", snapshot: "Public feed snapshot",
   useMap: "Use for raid", browseEmpty: "No matching sounds.",
   playUp: "Play pickup sound", playDown: "Play drop sound",
@@ -38,10 +40,13 @@ Object.assign(words, {
   confirmClear: "Clear scan history on this device?",
   overlayError: "The over-game window requires a supported version of Chrome or Edge.",
   phoneHelp: "Scan this code to open a snapshot of the current result on your phone.",
-  phoneEmpty: "Scan or select a cargo sound first.",
   phoneLocal: "Open the hosted page to share results with another device.",
   phoneCopied: "Link copied.", phoneCopyError: "Select and copy the link.",
-  phoneInvalid: "This link does not contain a valid result.", cancel: "Window selection canceled.",
+  phoneInvalid: "This link has expired or cannot connect.", cancel: "Window selection canceled.",
+  phoneWaitingTitle: "Ready for your first scan",
+  phoneWaitingBody: "Start listening on your computer. The merchant grid and loot will appear here as you scan.",
+  phoneSnapshotTitle: "No scan in this link yet",
+  phoneSnapshotBody: "Scan a cargo on your computer, then open Share to phone again for a result link.",
   estimateNote: "Estimate from public loot tables. Multiple items can share a sound.",
   netNote: "Payback uses contact value minus the cargo price.",
   gridWaiting: "Looking for merchant", gridReady: "Grid detected", gridOff: "Capture off",
@@ -252,7 +257,7 @@ function renderGrid() {
   pause.disabled = !capture;
   pause.setAttribute("aria-pressed", String(paused));
   pause.setAttribute("aria-label", paused ? "Resume scanning" : "Pause scanning");
-  pause.title = paused ? "Resume scanning" : "Pause scanning";
+  pause.dataset.tooltip = paused ? "Resume scanning" : "Pause scanning";
   pause.innerHTML = icon(paused ? "play" : "pause");
   $("grid-status").textContent = t(gridStatus());
   $("grid-caption").textContent = t(merchantView ? "hoverTitle" : "gridCaption");
@@ -279,7 +284,9 @@ function renderOverlay() {
   if (pause) {
     pause.disabled = !capture;
     pause.setAttribute("aria-pressed", String(paused));
-    pause.innerHTML = icon(paused ? "play" : "pause") + (paused ? "Resume" : "Pause");
+    pause.setAttribute("aria-label", paused ? "Resume scanning" : "Pause scanning");
+    pause.dataset.tooltip = paused ? "Resume scanning" : "Pause scanning";
+    pause.innerHTML = icon(paused ? "play" : "pause");
   }
   const reset = doc.getElementById("overlay-reset");
   if (reset) reset.disabled = revealed.size === 0;
@@ -435,10 +442,11 @@ function renderMaps() {
 
 function renderGuides() {
   $("guide-list").innerHTML = guides.map(guide =>
-    '<details class="card"><summary>' + escapeHtml(local(guide.title)) + "</summary><p>" +
+    '<details class="guide-entry"><summary class="select-trigger"><span>' + escapeHtml(local(guide.title)) +
+    '</span><svg aria-hidden="true"><use href="#i-chevron"/></svg></summary><div class="guide-panel"><p>' +
     escapeHtml(local(guide.summary)) + "</p>" + guide.sections.map(section => "<h3>" +
       escapeHtml(local(section.title)) + "</h3><p>" + escapeHtml(local(section.body)) + "</p>").join("") +
-    "</details>").join("");
+    "</div></details>").join("");
 }
 
 function initialize() {
@@ -545,9 +553,9 @@ function renderSounds() {
     '<div class="sound-row"><button class="sound-choose" data-group="' + id + '"><strong>' +
     escapeHtml(t("group")) + " " + id + '</strong><span>' + escapeHtml(group.items.map(item => item.name).join(", ")) +
     '</span></button><button class="icon-button" data-play="pickupUrl" data-id="' + id +
-    '" title="' + escapeHtml(t("playUp")) + '" aria-label="' + escapeHtml(t("playUp")) + '">' + icon("play") +
+      '" data-tooltip="' + escapeHtml(t("playUp")) + '" aria-label="' + escapeHtml(t("playUp")) + '">' + icon("play") +
     '</button><button class="icon-button" data-play="dropUrl" data-id="' + id +
-    '" title="' + escapeHtml(t("playDown")) + '" aria-label="' + escapeHtml(t("playDown")) + '">' + icon("play") +
+    '" data-tooltip="' + escapeHtml(t("playDown")) + '" aria-label="' + escapeHtml(t("playDown")) + '">' + icon("play") +
     "</button></div>").join("") : '<p class="muted-note">' + escapeHtml(t("browseEmpty")) + "</p>";
 }
 
@@ -574,12 +582,13 @@ async function openOverlay(showError = true) {
     panel.className = "card results overlay-panel";
     panel.innerHTML = '<header class="overlay-heading"><div class="overlay-brand"><img src="' +
       new URL("hydo.svg", document.baseURI).href + '" alt="" width="27" height="27"><div><h1>HydoABITool</h1>' +
-      '<p id="overlay-raid"></p></div></div><button id="overlay-close" type="button" class="icon-button" aria-label="Close overlay" title="Close overlay">' +
+      '<p id="overlay-raid"></p></div></div><button id="overlay-close" type="button" class="icon-button" aria-label="Close overlay" data-tooltip="Close overlay">' +
       icon("close") + '</button></header><div class="overlay-toolbar"><span id="overlay-status" class="status-pill"></span>' +
-      '<div><button id="overlay-pause" class="button outline" type="button" aria-pressed="false">Pause</button>' +
-      '<button id="overlay-reset" type="button" class="icon-button" aria-label="Clear revealed slots" title="Clear revealed slots">' +
+      '<div><button id="overlay-pause" class="icon-button" type="button" aria-label="Pause scanning" data-tooltip="Pause scanning" aria-pressed="false">' + icon("pause") + '</button>' +
+      '<button id="overlay-reset" type="button" class="icon-button" aria-label="Clear revealed slots" data-tooltip="Clear revealed slots">' +
       icon("reset") + '</button></div></div><div id="overlay-grid"></div><div id="overlay-result" class="overlay-result"></div>';
     overlay.body.append(panel);
+    attachTooltips(overlay);
     panel.addEventListener("click", chooseSlot);
     overlay.getElementById("overlay-pause").addEventListener("click", togglePause);
     overlay.getElementById("overlay-reset").addEventListener("click", resetGrid);
@@ -645,9 +654,9 @@ async function publishMirror() {
 function renderPhoneGrid() {
   if (!mirrorState) return;
   const { board, record } = mirrorState;
-  $("mirror-status").textContent = board ? "Live" : "Waiting for grid";
+  $("mirror-status").textContent = board ? "Live" : "Connected";
   $("mirror-grid").innerHTML = board ? gridMarkup(board, mirrorState, mirrorSlot) :
-    emptyCard("gridEmptyTitle", "gridEmptyBody");
+    emptyCard("phoneWaitingTitle", "phoneWaitingBody");
   const chosen = board?.slots.find(slot => slot.id === mirrorSlot)?.record ?? record;
   $("mirror-result").innerHTML = chosen ? resultMarkup(chosen, { ...mirrorState, ...chosen.scope }) : "";
 }
@@ -686,47 +695,79 @@ function renderRoute() {
     mirrorTimer = setInterval(update, 1600);
     return;
   }
-  const record = { id: params.get("sound"), score: params.has("similarity") ? Number(params.get("similarity")) : null };
+  const sound = params.get("sound");
+  const record = { id: sound, score: params.has("similarity") ? Number(params.get("similarity")) : null };
   const raid = { map: params.get("map"), mode: params.get("mode"), cargo: Number(params.get("cargo")) || null, asking: Number(params.get("asking")) || null };
-  $("mirror-status").textContent = "Snapshot";
-  $("mirror-result").innerHTML = groups.has(record.id) ? resultMarkup(record, raid) : escapeHtml(t("phoneInvalid"));
+  $("mirror-status").textContent = sound ? "Snapshot" : "Waiting for scan";
+  $("mirror-grid").innerHTML = !sound ? emptyCard("phoneSnapshotTitle", "phoneSnapshotBody") : "";
+  $("mirror-result").innerHTML = !sound ? "" :
+    groups.has(record.id) ? resultMarkup(record, raid) : escapeHtml(t("phoneInvalid"));
 }
 
-async function openPhone() {
-  $("phone-dialog").showModal();
-  $("phone-status").textContent = "";
-  $("phone-qr").replaceChildren();
-  $("phone-url").value = "";
-  $("copy-phone").disabled = true;
-  $("phone-help").textContent = t("phoneHelp");
-  if (location.protocol === "file:") { $("phone-help").textContent = t("phoneLocal"); return; }
+let phoneRequest;
+let phoneGeneration = 0;
+
+async function phoneLink(params, generation) {
   const base = new URL(location.href);
-  const params = new URLSearchParams();
-  try {
-    if (!mirrorSession || mirrorSession.expires <= Date.now()) {
-      const response = await fetch("/api/mirror", { method: "POST" });
-      if (!response.ok) throw Error("Mirror unavailable");
-      mirrorSession = await response.json();
-      lastMirrorBody = "";
-    }
-    if (!mirrorSession?.id) throw Error("Mirror unavailable");
-    params.set("id", mirrorSession.id);
-    $("phone-help").textContent = "Scan the code for the live merchant grid. The link expires after one hour.";
-    publishMirror();
-  } catch {
-    if (!result) { $("phone-help").textContent = t("phoneEmpty"); return; }
-    params.set("sound", result.id);
-    if (result.score !== null) params.set("similarity", result.score.toFixed(3));
-    for (const [key, value] of Object.entries(context())) if (value) params.set(key, String(value));
-  }
   base.hash = "mirror?" + params.toString();
   $("phone-url").value = base.href;
   $("copy-phone").disabled = false;
+  $("phone-qr").replaceChildren();
   if (globalThis.QRCode) {
     const qr = document.createElement("canvas");
     $("phone-qr").append(qr);
-    try { await globalThis.QRCode.toCanvas(qr, base.href, { width: 184, margin: 2 }); }
-    catch { qr.remove(); }
+    try {
+      await globalThis.QRCode.toCanvas(qr, base.href, { width: 184, margin: 2 });
+      if (generation !== phoneGeneration) qr.remove();
+    } catch { qr.remove(); }
+  }
+}
+
+function snapshotParams() {
+  const params = new URLSearchParams();
+  const state = context();
+  for (const key of ["map", "mode", "cargo", "asking"]) {
+    if (state[key]) params.set(key, String(state[key]));
+  }
+  if (result) {
+    params.set("sound", result.id);
+    if (result.score !== null) params.set("similarity", result.score.toFixed(3));
+  }
+  return params;
+}
+
+async function openPhone() {
+  if (!$("phone-dialog").open) $("phone-dialog").showModal();
+  const generation = ++phoneGeneration;
+  $("phone-status").textContent = "";
+  $("phone-help").textContent = "Open this link on your phone. You can connect before scanning.";
+  await phoneLink(snapshotParams(), generation);
+  if (generation !== phoneGeneration) return;
+  if (location.protocol === "file:") { $("phone-status").textContent = t("phoneLocal"); return; }
+  $("phone-status").textContent = "Connecting live sharing…";
+  try {
+    if (!mirrorSession || mirrorSession.expires <= Date.now()) {
+      phoneRequest ??= fetch("/api/mirror", { method: "POST", signal: AbortSignal.timeout(6500) }).then(async response => {
+        if (!response.ok) throw Error("Mirror unavailable");
+        const session = await response.json();
+        if (!/^[a-f0-9]{32}$/.test(session.id) || !/^[a-f0-9]{32}$/.test(session.writer) ||
+            !Number.isFinite(session.expires) || session.expires <= Date.now()) throw Error("Invalid sharing session");
+        return session;
+      }).finally(() => { phoneRequest = undefined; });
+      mirrorSession = await phoneRequest;
+      lastMirrorBody = "";
+    }
+    if (generation !== phoneGeneration) return;
+    const params = new URLSearchParams();
+    params.set("id", mirrorSession.id);
+    $("phone-help").textContent = "Scan to connect now. Your phone will show new results as you scan.";
+    $("phone-status").textContent = "Live link · expires in one hour";
+    await phoneLink(params, generation);
+    void publishMirror();
+  } catch {
+    if (generation !== phoneGeneration) return;
+    $("phone-status").textContent = result ?
+      "Snapshot link · live sharing is currently unavailable." : "Ready to open · live sharing is currently unavailable.";
   }
 }
 
@@ -747,6 +788,7 @@ $("upload").addEventListener("click", () => $("clip-file").click());
 $("clip-file").addEventListener("change", () => analyzeUpload($("clip-file").files[0]));
 $("overlay").addEventListener("click", () => openOverlay());
 $("phone").addEventListener("click", openPhone);
+$("phone-dialog").addEventListener("close", () => { phoneGeneration++; });
 $("copy-phone").addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText($("phone-url").value);
@@ -784,6 +826,15 @@ $("clear-history").addEventListener("click", () => {
 window.addEventListener("hashchange", renderRoute);
 window.addEventListener("pagehide", () => { capture?.stop(); merchantSession?.close(); });
 initialize();
+attachTooltips();
+startTutorial($("tutorial-open"), [
+  { target: "#map .select-trigger", title: "Choose your map", body: "Pick the map for your current raid. The scanner uses it to narrow the possible loot." },
+  { target: "#mode .select-trigger", title: "Match your raid mode", body: "Choose the same difficulty or infection mode as the game." },
+  { target: "#listen", title: "Share the game window", body: "Press Listen to game in desktop Chrome or Edge. Choose Arena Breakout: Infinite and turn on audio sharing." },
+  { target: "#merchant-grid", title: "Let the grid appear", body: "Open the merchant and move the cursor away briefly. Hover a cargo until its price appears, then drag and drop it once to reveal possible loot." },
+  { target: "#overlay", title: "Keep results over the game", body: "This opens a floating grid. Pause or resume scanning, clear revealed items, and select a slot to inspect its possible contents." },
+  { target: "#phone", title: "Connect your phone anytime", body: "Open the QR code before your first scan. With live sharing connected, results will appear on your phone as you play. Replay this tour from the help icon." },
+]);
 if (location.protocol !== "file:") {
   const updateFinds = () => fetch("/api/finds", { cache: "no-store" }).then(response => {
     if (!response.ok) throw Error("Finds unavailable");
