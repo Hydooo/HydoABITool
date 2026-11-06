@@ -6,6 +6,7 @@
   "engines": { "node": "22.x" },
   "scripts": {
     "build": "node scripts/check-assets.mjs",
+    "test": "node --test",
     "start": "node scripts/preview.mjs"
   }
 }

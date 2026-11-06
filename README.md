@@ -12,6 +12,8 @@ With Node.js 22, run `npm run build` to check the shipped assets, then `npm star
 
 Game audio and video are processed in the browser. The phone relay receives detected slot geometry, result IDs, and loot estimates. Live phone links expire after one hour. Original artwork and the OCR runtime load over HTTPS.
 
+Each live share has independent private read and write keys. Publishing results also requires the desktop's original IP address, represented by a keyed hash in the relay. People behind the same public IP get separate links. A phone can use its private QR key from another network. If the desktop changes networks, reopen phone sharing to create a new link.
+
 ## Deploy on Vercel
 
 Import this repository with the project root set to the repository root. The checked-in `vercel.json` selects the static frontend and the Vercel Functions in `api/`. The scanner works without environment variables or an app account.

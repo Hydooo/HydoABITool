@@ -640,6 +640,13 @@ async function publishMirror() {
       const response = await fetch("/api/mirror/" + session.id, {
         method: "PUT", body, headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.writer },
       });
+      if (response.status === 403 || response.status === 404) {
+        if (mirrorSession === session) mirrorSession = undefined;
+        if ($("phone-dialog").open) {
+          $("phone-status").textContent = "Your sharing IP changed or the link expired. Close and reopen Share to phone for a new link.";
+        }
+        break;
+      }
       if (!response.ok) break;
       if (mirrorSession === session) lastMirrorBody = body;
     }
@@ -678,10 +685,18 @@ function renderRoute() {
   $("mirror-result").replaceChildren();
   const params = new URLSearchParams(query);
   const id = params.get("id");
+  const reader = params.get("read");
   if (id && /^[a-z0-9]{32}$/i.test(id)) {
+    if (!reader || !/^[a-f0-9]{32}$/.test(reader)) {
+      $("mirror-status").textContent = "Private key required";
+      $("mirror-result").textContent = "Open a new QR link from your computer.";
+      return;
+    }
     const update = async () => {
       try {
-        const response = await fetch("/api/mirror/" + id, { cache: "no-store" });
+        const response = await fetch("/api/mirror/" + id, {
+          cache: "no-store", headers: { Authorization: "Bearer " + reader },
+        });
         if (!response.ok) throw Error("Mirror unavailable");
         if (location.hash !== "#mirror?" + query) return;
         mirrorState = await response.json();
@@ -751,6 +766,7 @@ async function openPhone() {
         if (!response.ok) throw Error("Mirror unavailable");
         const session = await response.json();
         if (!/^[a-f0-9]{32}$/.test(session.id) || !/^[a-f0-9]{32}$/.test(session.writer) ||
+            !/^[a-f0-9]{32}$/.test(session.reader) ||
             !Number.isFinite(session.expires) || session.expires <= Date.now()) throw Error("Invalid sharing session");
         return session;
       }).finally(() => { phoneRequest = undefined; });
@@ -760,6 +776,7 @@ async function openPhone() {
     if (generation !== phoneGeneration) return;
     const params = new URLSearchParams();
     params.set("id", mirrorSession.id);
+    params.set("read", mirrorSession.reader);
     $("phone-help").textContent = "Scan to connect now. Your phone will show new results as you scan.";
     $("phone-status").textContent = "Live link · expires in one hour";
     await phoneLink(params, generation);
